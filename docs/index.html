@@ -3,228 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Defusal Sandbox</title>
+    <title>Tech Support Dash - 3-Lane Endless Runner</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
         body {
+            background: #1e1e24;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121214;
             color: #fff;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            height: 100vh;
         }
-        .game-container {
-            background: #1e1e24;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            border: 4px solid #333;
-            transition: all 0.3s ease;
-        }
-        .vibe-gauge {
-            width: 100%;
-            height: 25px;
-            background: #333;
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #3a3d52, #181a24);
+            border: 4px solid #4e54c8;
             border-radius: 12px;
-            margin: 20px 0;
             overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .gauge-fill {
-            width: 50%;
+        /* UI Overlay */
+        .ui-panel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .hud-item {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+        }
+        #morale-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #morale-bar-bg {
+            width: 80px;
+            height: 12px;
+            background: #444;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #666;
+        }
+        #morale-bar {
+            width: 100%;
             height: 100%;
-            background: #ff9800;
-            transition: width 0.5s ease, background-color 0.5s ease;
+            background: #00ff87;
+            transition: width 0.2s, background-color 0.3s;
         }
-        .customer-bubble {
-            background: #2d2d38;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-style: italic;
-            font-size: 1.1rem;
-            min-height: 50px;
+        /* 3-Lane Graphics */
+        .lane-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+        #line-1 { left: 33.33%; }
+        #line-2 { left: 66.66%; }
+        
+        /* Incoming Objects */
+        .game-element {
+            position: absolute;
+            width: 80px;
+            transform: translateX(-50%);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
+            padding: 6px;
+            z-index: 3;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: top 0.016s linear;
         }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-top: 20px;
+        .obstacle {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border: 2px solid #ff8585;
+            height: 65px;
+            color: #fff;
         }
-        button {
-            background: #3a3a4a;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            text-align: left;
-            transition: background 0.2s, transform 0.1s;
+        .powerup {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            border: 2px solid #85e3ff;
+            height: 55px;
+            color: #fff;
         }
-        button:hover {
-            background: #4a4a5a;
-            transform: translateY(-2px);
+        .element-icon {
+            font-size: 18px;
+            margin-bottom: 2px;
         }
-        .stats {
+        /* Player Character */
+        #player {
+            position: absolute;
+            bottom: 40px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            transition: left 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.15);
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: 0 6px 15px rgba(78, 84, 200, 0.5);
+        }
+        .player-head { font-size: 26px; }
+        .player-tag { font-size: 9px; background: rgba(0,0,0,0.4); padding: 1px 4px; border-radius: 4px; margin-top: 2px; }
+
+        /* Menu Systems */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 22, 31, 0.95);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+        }
+        .hidden { display: none !important; }
+        h1 { font-size: 28px; color: #4e54c8; margin-bottom: 10px; text-shadow: 0 0 10px rgba(78,84,200,0.3); }
+        p { font-size: 14px; color: #aaa; margin-bottom: 25px; line-height: 1.4; }
+        button {
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
             font-weight: bold;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(78,84,200,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .boom {
-            font-size: 5rem;
-            animation: explode 0.5s ease-out forwards;
+        button:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(78,84,200,0.6); }
+        .controls-hint { margin-top: 30px; font-size: 12px; color: #666; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .feedback {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 130px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 15;
+            animation: popUp 0.8s ease-out forwards;
         }
-        @keyframes explode {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.4); opacity: 1; }
-            100% { transform: scale(1); }
+        .feedback.bad { background: #ff416c; color: white; }
+        .feedback.good { background: #00ff87; color: #121214; }
+        @keyframes popUp {
+            0% { opacity: 0; transform: translate(-50%, 20px); }
+            20% { opacity: 1; transform: translate(-50%, 0); }
+            80% { opacity: 1; transform: translate(-50%, -10px); }
+            100% { opacity: 0; transform: translate(-50%, -30px); }
         }
     </style>
 </head>
 <body>
 
-    <div class="game-container" id="gameBox">
-        <div class="stats">
-            <div id="scoreDisplay">Score: 0</div>
-            <div id="statusDisplay">Customer Anger</div>
-        </div>
-        
-        <div class="vibe-gauge">
-            <div class="gauge-fill" id="gauge"></div>
-        </div>
-
-        <div class="customer-bubble" id="customerSpeech">
-            "Your system broke down and ruined my entire presentation! Fix it right now!!"
+    <div id="game-container">
+        <div class="ui-panel">
+            <div class="hud-item" id="score-board">Score: 0</div>
+            <div class="hud-item" id="morale-container">
+                <span>Morale:</span>
+                <div id="morale-bar-bg"><div id="morale-bar"></div></div>
+            </div>
         </div>
 
-        <div class="options-grid" id="optionsContainer">
-            <!-- Buttons dynamically generated by JS -->
+        <div class="lane-line" id="line-1"></div>
+        <div class="lane-line" id="line-2"></div>
+
+        <div id="player">
+            <span class="player-head">👨‍💻</span>
+            <span class="player-tag">SUPPORT</span>
+        </div>
+
+        <div id="start-screen" class="screen">
+            <h1>Tech Support Dash</h1>
+            <p>Dodge toxic ticket phrases that destroy customer relationships and collect professional de-escalation responses to keep your team's Morale alive!</p>
+            <button id="start-btn">Start Shifts</button>
+            <div class="controls-hint">Use <strong>A / D</strong> or <strong>Left / Right Arrows</strong> to switch lanes.</div>
+        </div>
+
+        <div id="game-over-screen" class="screen hidden">
+            <h1>Shift Failed!</h1>
+            <p>Your team's morale crashed completely under the weight of toxic tickets.</p>
+            <div class="hud-item" id="final-score" style="margin-bottom: 20px; display: inline-block;">Final Score: 0</div>
+            <br>
+            <button id="restart-btn">Try Another Shift</button>
         </div>
     </div>
 
     <script>
-        let score = 0;
-        let angerLevel = 50; // Starts at 50%
-        let currentScenario = 0;
+        const container = document.getElementById('game-container');
+        const player = document.getElementById('player');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const scoreBoard = document.getElementById('score-board');
+        const finalScore = document.getElementById('final-score');
+        const moraleBar = document.getElementById('morale-bar');
 
-        const scenarios = [
-            {
-                speech: '"Your system broke down and ruined my entire presentation! Fix it right now!!"',
-                options: [
-                    { text: "I understand your frustration. Let's get this resolved immediately.", correct: true },
-                    { text: "Calm down, it's just a presentation. Systems fail all the time.", correct: false }
-                ]
-            },
-            {
-                speech: '"I demand a full refund right now, or I am leaving a 1-star review on every platform!"',
-                options: [
-                    { text: "Go right ahead, threats won't speed up our processing timeline.", correct: false },
-                    { text: "I can absolutely look up your billing terms right now to check your refund options.", correct: true }
-                ]
-            },
-            {
-                speech: '"You people are entirely incompetent! Why can\'t anyone give me a straight answer?!"',
-                options: [
-                    { text: "I am taking ownership of this right now so you don't have to keep repeating yourself.", correct: true },
-                    { text: "If you let me speak without interrupting, I could give you an answer.", correct: false }
-                ]
-            }
+        const lanePositions = [66.66, 200, 333.33]; 
+        let currentLane = 1; 
+        let score = 0, morale = 100, gameActive = false, elements = [];
+        let speed = 4, spawnInterval = 1200, lastSpawnTime = 0, animationFrameId;
+
+        const toxicPhrases = [
+            { text: '"Calm Down!"', icon: '🤬' },
+            { text: '"Not My Job"', icon: '🙄' },
+            { text: '"Read Manual"', icon: '🖕' },
+            { text: '"Hold Forever"', icon: '⏳' },
+            { text: '"Your Fault"', icon: '🫵' }
         ];
 
-        function loadScenario() {
-            if (angerLevel >= 100) {
-                triggerBoom();
-                return;
-            }
-            if (angerLevel <= 0) {
-                triggerWin();
-                return;
-            }
+        const positivePhrases = [
+            { text: '"I Understand"', icon: '🤝' },
+            { text: '"Let Me Fix It"', icon: '🛠️' },
+            { text: '"Valid Point"', icon: '💡' },
+            { text: '"Happy To Help"', icon: '✨' },
+            { text: '"Thank You"', icon: '🙏' }
+        ];
 
-            // Pick a scenario loop
-            let s = scenarios[currentScenario % scenarios.length];
-            document.getElementById('customerSpeech').innerText = s.speech;
-            
-            let container = document.getElementById('optionsContainer');
-            container.innerHTML = '';
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        window.addEventListener('keydown', handleKeyDown);
 
-            s.options.forEach(opt => {
-                let btn = document.createElement('button');
-                btn.innerText = opt.text;
-                btn.onclick = () => handleAnswer(opt.correct);
-                container.appendChild(btn);
-            });
-        }
+        function updatePlayerPosition() { player.style.left = lanePositions[currentLane] + 'px'; }
 
-        function handleAnswer(isCorrect) {
-            let gameBox = document.getElementById('gameBox');
-            let gauge = document.getElementById('gauge');
-
-            if (isCorrect) {
-                score += 100;
-                angerLevel -= 25;
-                gameBox.style.borderColor = "#4caf50"; // Turn Green
-                gauge.style.backgroundColor = "#4caf50";
-            } else {
-                angerLevel += 35;
-                gameBox.style.borderColor = "#f44336"; // Turn Red
-                gauge.style.backgroundColor = "#f44336";
-            }
-
-            // Keep anger limits between 0 and 100
-            angerLevel = Math.max(0, Math.min(100, angerLevel));
-            gauge.style.width = angerLevel + "%";
-            document.getElementById('scoreDisplay').innerText = "Score: " + score;
-
-            if (angerLevel >= 100) {
-                setTimeout(triggerBoom, 500);
-            } else if (angerLevel <= 0) {
-                setTimeout(triggerWin, 500);
-            } else {
-                currentScenario++;
-                setTimeout(() => {
-                    gameBox.style.borderColor = "#333"; // Reset color framework
-                    loadScenario();
-                }, 800);
-            }
-        }
-
-        function triggerBoom() {
-            document.getElementById('gameBox').innerHTML = `
-                <div class="boom">💥 BOOM!</div>
-                <h2>The Customer Exploded!</h2>
-                <p>Final Score: ${score}</p>
-                <button onclick="window.location.reload()" style="text-align:center; width:100%">Try Again</button>
-            `;
-            document.getElementById('gameBox').style.borderColor = "#f44336";
-        }
-
-        function triggerWin() {
-            document.getElementById('gameBox').innerHTML = `
-                <div class="boom">🎉 CALMED!</div>
-                <h2>Crisis Defused Successfully!</h2>
-                <p>Excellent emotional handling. Final Score: ${score}</p>
-                <button onclick="window.location.reload()" style="text-align:center; width:100%">Play Again</button>
-            `;
-            document.getElementById('gameBox').style.borderColor = "#4caf50";
-        }
-
-        // Start Game
-        loadScenario();
-    </script>
-</body>
-</html>
+        function handleKeyDown(e) {
+            if (!gameActive) return;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { if (currentLane > 0) currentLane--; }
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { if (currentLane < 2) currentLane++; }
